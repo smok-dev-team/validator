@@ -10,7 +10,7 @@ const (
 )
 
 ////////////////////////////////////////////////////////////////////////////////
-type IValidator interface {
+type Validator interface {
 	ErrorList()                      []error
 	ErrorMap()                       map[string][]error
 	ErrorListWithField(field string) []error
@@ -61,7 +61,7 @@ func (this *validator) OK() bool {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func Validate(obj interface{}) (IValidator) {
+func Validate(obj interface{}) (Validator) {
 	var objType = reflect.TypeOf(obj)
 	var objValue = reflect.ValueOf(obj)
 
