@@ -10,23 +10,6 @@ const (
 )
 
 ////////////////////////////////////////////////////////////////////////////////
-type ValidatorError struct {
-	Code    int       `json:"code"`
-	Message string    `json:"message"`
-}
-
-func NewValidatorError(code int, msg string) (*ValidatorError) {
-	var err = &ValidatorError{}
-	err.Code = code
-	err.Message = msg
-	return err
-}
-
-func (this *ValidatorError) Error() string {
-	return fmt.Sprintf("[%d]%s", this.Code, this.Message)
-}
-
-////////////////////////////////////////////////////////////////////////////////
 type IValidator interface {
 	ErrorList()                      []error
 	ErrorMap()                       map[string][]error
