@@ -33,11 +33,23 @@ func (this Human) AgeValidator(a int) error {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 func TestValidator(t *testing.T) {
 	var h Human
-	h.Name = "这是我的名字"
 
 	var r = Validate(h)
 	if !r.OK() {
 		var e = r.Error()
 		fmt.Println(errors.Code(e), errors.Message(e))
+		fmt.Println(r.ErrorList())
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+func TestLazyValidator(t *testing.T) {
+	var h Human
+
+	var r = LazyValidate(h)
+	if !r.OK() {
+		var e = r.Error()
+		fmt.Println(errors.Code(e), errors.Message(e))
+		fmt.Println(r.ErrorList())
 	}
 }

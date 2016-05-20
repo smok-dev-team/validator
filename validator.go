@@ -23,6 +23,7 @@ type validator struct {
 	errorMap  map[string][]error  `json:"error_map"`
 	errorList []error             `json:"-"`
 	fieldList []string            `json:"-"`
+	lazy      bool                `json:"-"`
 }
 
 func (this *validator) String() string {
@@ -62,6 +63,14 @@ func (this *validator) OK() bool {
 
 ////////////////////////////////////////////////////////////////////////////////
 func Validate(obj interface{}) (Validator) {
+	return _validate(obj, false)
+}
+
+func LazyValidate(obj interface{}) (Validator) {
+	return _validate(obj, true)
+}
+
+func _validate(obj interface{}, lazy bool) (Validator) {
 	var objType = reflect.TypeOf(obj)
 	var objValue = reflect.ValueOf(obj)
 
@@ -78,10 +87,10 @@ func Validate(obj interface{}) (Validator) {
 		return nil
 	}
 
-
 	var val = &validator{}
 	val.errorMap = make(map[string][]error)
 	val.fieldList = make([]string, 0, objType.NumField())
+	val.lazy = lazy
 
 	validate(objType, objValue, val)
 
@@ -100,6 +109,9 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 
 		if fieldValue.Kind() == reflect.Struct {
 			validate(fieldValue.Type(), fieldValue, val)
+			if val.lazy && len(val.errorMap) > 0 {
+				return
+			}
 			continue
 		}
 
@@ -114,6 +126,9 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 					val.errorMap[fieldStruct.Name] = eList[0].Interface().([]error)
 				} else {
 					val.errorMap[fieldStruct.Name] = []error{eList[0].Interface().(error)}
+				}
+				if val.lazy {
+					return
 				}
 			}
 		}

@@ -50,3 +50,8 @@ if !v.OK() {
 ```
 
 如上所示，验证方法命名规则为：属性名+Validator（如: NameValidator），方法有唯一的参数，即对应属性的值，方法需要返回一个满足 error 接口的对象，如果返回 nil，则表示该验证通过。
+
+#### LazyValidate
+validator.Validate() 方法将一次验证所有的属性，验证完成之后，才会返回验证的结果。为此可能会多耗费一些时间。
+
+如果想快速一点，可以试试 validator.LazyValidate() 方法，该方法会依次验证 Struct 的属性，遇到第一个错误的时候就会停止验证，并将错误信息返回。
