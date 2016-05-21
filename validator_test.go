@@ -12,16 +12,16 @@ type Human struct {
 	Age  int
 }
 
-func (this Human) NameValidator(n string) error {
+func (this *Human) NameValidator(n string) error {
 	if n == "" {
-		return errors.NewWithCode(1001, "请提供你的名字哦")
+		return errors.NewWithCode(1001, "name pls")
 	}
 	return nil
 }
 
 func (this Human) AgeValidator(a int) error {
 	if a <= 0 {
-		return errors.NewWithCode(1002, "你确定这是你的年龄？")
+		return errors.NewWithCode(1002, "age pls")
 	}
 
 	if a > 100 {
@@ -32,9 +32,8 @@ func (this Human) AgeValidator(a int) error {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 func TestValidator(t *testing.T) {
-	var h Human
-
-	var r = Validate(h)
+	var h *Human = &Human{}
+	var r = Validate(&h)
 	if !r.OK() {
 		var e = r.Error()
 		fmt.Println(errors.Code(e), errors.Message(e))
@@ -46,7 +45,7 @@ func TestValidator(t *testing.T) {
 func TestLazyValidator(t *testing.T) {
 	var h Human
 
-	var r = LazyValidate(h)
+	var r = LazyValidate(&h)
 	if !r.OK() {
 		var e = r.Error()
 		fmt.Println(errors.Code(e), errors.Message(e))

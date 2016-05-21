@@ -58,7 +58,7 @@ func (this *validator) Error() error {
 }
 
 func (this *validator) OK() bool {
-	return (len(this.errorMap) == 0)
+	return (this.errorMap != nil && len(this.errorMap) == 0)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,18 +73,19 @@ func LazyValidate(obj interface{}) (Validator) {
 func _validate(obj interface{}, lazy bool) (Validator) {
 	var objType = reflect.TypeOf(obj)
 	var objValue = reflect.ValueOf(obj)
+	var objValueKind = objValue.Kind()
 
 	for {
-		if objValue.Kind() == reflect.Ptr {
+		if objValueKind == reflect.Ptr && objValue.IsNil() {
+			panic("interface passed for validation is nil")
+		}
+		if objValueKind == reflect.Ptr {
 			objValue = objValue.Elem()
 			objType = objType.Elem()
+			objValueKind = objValue.Kind()
 			continue
 		}
 		break
-	}
-
-	if !objValue.IsValid() {
-		return nil
 	}
 
 	var val = &validator{}
@@ -93,7 +94,6 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 	val.lazy = lazy
 
 	validate(objType, objValue, val)
-
 	return val
 }
 
@@ -117,6 +117,13 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 
 		var mName  = fieldStruct.Name + K_VALIDATOR_FUNC_SUFFIX
 		var mValue = objValue.MethodByName(mName)
+
+		if mValue.IsValid() == false {
+			if objValue.CanAddr() {
+				mValue = objValue.Addr().MethodByName(mName)
+			}
+		}
+
 		if mValue.IsValid() {
 			var eList = mValue.Call([]reflect.Value{fieldValue})
 

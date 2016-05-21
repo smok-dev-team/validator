@@ -46,6 +46,10 @@ if !v.OK() {
 	fmt.Println("抱歉，验证没有通过")
 }
 
+or
+
+var v = validator.Validate(&h)
+...
 
 ```
 
