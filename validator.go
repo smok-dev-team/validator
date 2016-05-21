@@ -77,7 +77,7 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 
 	for {
 		if objValueKind == reflect.Ptr && objValue.IsNil() {
-			panic("interface passed for validation is nil")
+			panic("object passed for validation is nil")
 		}
 		if objValueKind == reflect.Ptr {
 			objValue = objValue.Elem()
