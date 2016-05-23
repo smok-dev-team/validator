@@ -20,34 +20,34 @@ type Validator interface {
 
 ////////////////////////////////////////////////////////////////////////////////
 type validator struct {
-	errorMap  map[string][]error  `json:"error_map"`
-	errorList []error             `json:"-"`
+	ErrMap    map[string][]error  `json:"error_map"`
+	errList   []error             `json:"-"`
 	fieldList []string            `json:"-"`
 	lazy      bool                `json:"-"`
 }
 
 func (this *validator) String() string {
-	return fmt.Sprintf("[validator]: Valid:%t, Error:%s", this.OK(), this.errorMap)
+	return fmt.Sprintf("[validator]: Valid:%t, Error:%s", this.OK(), this.ErrMap)
 }
 
 func (this *validator) ErrorList() []error {
-	if this.errorList == nil {
-		if len(this.errorMap) > 0 {
-			this.errorList = make([]error, 0, len(this.fieldList))
+	if this.errList == nil {
+		if len(this.ErrMap) > 0 {
+			this.errList = make([]error, 0, len(this.fieldList))
 			for _, field := range this.fieldList {
-				this.errorList = append(this.errorList, this.errorMap[field]...)
+				this.errList = append(this.errList, this.ErrMap[field]...)
 			}
 		}
 	}
-	return this.errorList
+	return this.errList
 }
 
 func (this *validator) ErrorMap() map[string][]error {
-	return this.errorMap
+	return this.ErrMap
 }
 
 func (this *validator) ErrorListWithField(field string) []error {
-	return this.errorMap[field]
+	return this.ErrMap[field]
 }
 
 func (this *validator) Error() error {
@@ -58,7 +58,7 @@ func (this *validator) Error() error {
 }
 
 func (this *validator) OK() bool {
-	return (this.errorMap != nil && len(this.errorMap) == 0)
+	return (this.ErrMap != nil && len(this.ErrMap) == 0)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 	}
 
 	var val = &validator{}
-	val.errorMap = make(map[string][]error)
+	val.ErrMap = make(map[string][]error)
 	val.fieldList = make([]string, 0, objType.NumField())
 	val.lazy = lazy
 
@@ -109,7 +109,7 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 
 		if fieldValue.Kind() == reflect.Struct {
 			validate(fieldValue.Type(), fieldValue, val)
-			if val.lazy && len(val.errorMap) > 0 {
+			if val.lazy && len(val.ErrMap) > 0 {
 				return
 			}
 			continue
@@ -130,9 +130,9 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 			if !eList[0].IsNil() {
 				val.fieldList = append(val.fieldList, fieldStruct.Name)
 				if eList[0].Kind() == reflect.Slice {
-					val.errorMap[fieldStruct.Name] = eList[0].Interface().([]error)
+					val.ErrMap[fieldStruct.Name] = eList[0].Interface().([]error)
 				} else {
-					val.errorMap[fieldStruct.Name] = []error{eList[0].Interface().(error)}
+					val.ErrMap[fieldStruct.Name] = []error{eList[0].Interface().(error)}
 				}
 				if val.lazy {
 					return
