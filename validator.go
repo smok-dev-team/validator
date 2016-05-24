@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	K_VALIDATOR_FUNC_SUFFIX = "Validator"
+	k_VALIDATOR_FUNC_SUFFIX = "Validator"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +115,7 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 			continue
 		}
 
-		var mName  = fieldStruct.Name + K_VALIDATOR_FUNC_SUFFIX
+		var mName  = fieldStruct.Name + k_VALIDATOR_FUNC_SUFFIX
 		var mValue = objValue.MethodByName(mName)
 
 		if mValue.IsValid() == false {
