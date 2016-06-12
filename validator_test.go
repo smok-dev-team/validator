@@ -36,7 +36,7 @@ func TestValidator(t *testing.T) {
 	var r = Validate(&h)
 	if !r.OK() {
 		var e = r.Error()
-		fmt.Println(errors.Code(e), errors.Message(e))
+		fmt.Println(errors.ErrorCode(e), errors.ErrorMessage(e))
 		fmt.Println(r.ErrorList())
 	}
 }
@@ -48,7 +48,7 @@ func TestLazyValidator(t *testing.T) {
 	var r = LazyValidate(&h)
 	if !r.OK() {
 		var e = r.Error()
-		fmt.Println(errors.Code(e), errors.Message(e))
+		fmt.Println(errors.ErrorCode(e), errors.ErrorMessage(e))
 		fmt.Println(r.ErrorList())
 	}
 }
