@@ -12,19 +12,19 @@ const (
 
 ////////////////////////////////////////////////////////////////////////////////
 type Validator interface {
-	ErrorList()                      []error
-	ErrorMap()                       map[string][]error
+	ErrorList() []error
+	ErrorMap() map[string][]error
 	ErrorListWithField(field string) []error
-	Error()                          error
-	OK()                             bool
+	Error() error
+	OK() bool
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 type validator struct {
-	ErrMap    map[string][]error  `json:"error_map"`
-	errList   []error             `json:"-"`
-	fieldList []string            `json:"-"`
-	lazy      bool                `json:"-"`
+	ErrMap    map[string][]error `json:"error_map"`
+	errList   []error            `json:"-"`
+	fieldList []string           `json:"-"`
+	lazy      bool               `json:"-"`
 }
 
 func (this *validator) String() string {
@@ -63,15 +63,15 @@ func (this *validator) OK() bool {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-func Validate(obj interface{}) (Validator) {
+func Validate(obj interface{}) Validator {
 	return _validate(obj, false)
 }
 
-func LazyValidate(obj interface{}) (Validator) {
+func LazyValidate(obj interface{}) Validator {
 	return _validate(obj, true)
 }
 
-func _validate(obj interface{}, lazy bool) (Validator) {
+func _validate(obj interface{}, lazy bool) Validator {
 	var objType = reflect.TypeOf(obj)
 	var objValue = reflect.ValueOf(obj)
 	var objValueKind = objValue.Kind()
@@ -100,13 +100,13 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 
 	val.fieldList = make([]string, 0, objType.NumField())
 
-	validate(objType, objValue, val)
+	validate(objType, objValue, objValue, val)
 	return val
 }
 
-func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
+func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val *validator) {
 	var numField = objType.NumField()
-	for i:=0; i<numField; i++ {
+	for i := 0; i < numField; i++ {
 		var fieldStruct = objType.Field(i)
 		var fieldValue = objValue.Field(i)
 
@@ -115,24 +115,18 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 		}
 
 		if fieldValue.Kind() == reflect.Struct {
-			validate(fieldValue.Type(), fieldValue, val)
+			validate(fieldValue.Type(), currentObjValue, fieldValue, val)
 			if val.lazy && len(val.ErrMap) > 0 {
 				return
 			}
 			continue
 		}
 
-		var mName  = fieldStruct.Name + k_VALIDATOR_FUNC_SUFFIX
-		var mValue = objValue.MethodByName(mName)
+		var funcName = fieldStruct.Name + k_VALIDATOR_FUNC_SUFFIX
+		var funcValue = getFuncWithName(funcName, currentObjValue, objValue)
 
-		if mValue.IsValid() == false {
-			if objValue.CanAddr() {
-				mValue = objValue.Addr().MethodByName(mName)
-			}
-		}
-
-		if mValue.IsValid() {
-			var eList = mValue.Call([]reflect.Value{fieldValue})
+		if funcValue.IsValid() {
+			var eList = funcValue.Call([]reflect.Value{fieldValue})
 
 			if !eList[0].IsNil() {
 				val.fieldList = append(val.fieldList, fieldStruct.Name)
@@ -147,4 +141,17 @@ func validate(objType reflect.Type, objValue reflect.Value, val *validator) {
 			}
 		}
 	}
+}
+
+func getFuncWithName(funcName string, currentObjValue, objValue reflect.Value) reflect.Value {
+	var funcValue = currentObjValue.MethodByName(funcName)
+	if funcValue.IsValid() == false {
+		if currentObjValue.CanAddr() {
+			funcValue = currentObjValue.Addr().MethodByName(funcName)
+		}
+	}
+	if funcValue.IsValid() == false && currentObjValue != objValue {
+		return getFuncWithName(funcName, objValue, objValue)
+	}
+	return funcValue
 }

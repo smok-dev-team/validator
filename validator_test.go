@@ -14,14 +14,14 @@ type Human struct {
 
 func (this *Human) NameValidator(n string) error {
 	if n == "" {
-		return errors.NewWithCode(1001, "name pls")
+		return errors.NewWithCode(1001, "请输入名字")
 	}
 	return nil
 }
 
 func (this Human) AgeValidator(a int) error {
 	if a <= 0 {
-		return errors.NewWithCode(1002, "age pls")
+		return errors.NewWithCode(1002, "请输入年龄")
 	}
 
 	if a > 100 {
@@ -42,10 +42,27 @@ func TestValidator(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-func TestLazyValidator(t *testing.T) {
-	var h Human
 
-	var r = LazyValidate(&h)
+type Student struct {
+	Human
+	Number int
+}
+
+func (this Student) NameValidator(n string) error {
+	return nil
+}
+
+func (this Student) NumberValidator(n int) error {
+	if n <= 0 {
+		return errors.NewWithCode(1004, "应该有一个学号")
+	}
+	return nil
+}
+
+func TestLazyValidator(t *testing.T) {
+	var s Student
+
+	var r = Validate(&s)
 	if !r.OK() {
 		var e = r.Error()
 		fmt.Println(errors.ErrorCode(e), errors.ErrorMessage(e))
