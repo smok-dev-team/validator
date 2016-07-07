@@ -3,6 +3,7 @@ package validator
 import (
 	"fmt"
 	"reflect"
+	"errors"
 )
 
 const (
@@ -75,9 +76,18 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 	var objValue = reflect.ValueOf(obj)
 	var objValueKind = objValue.Kind()
 
+	var val = &validator{}
+	val.ErrMap = make(map[string][]error)
+	val.lazy = lazy
+
 	for {
 		if objValueKind == reflect.Ptr && objValue.IsNil() {
-			panic("object passed for validation is nil")
+			var errList = make([]error, 1)
+			errList[0] = errors.New("object passed for validation is nil")
+			val.fieldList = make([]string, 1)
+			val.fieldList[0] = "Object"
+			val.ErrMap["Object"] = errList
+			return val
 		}
 		if objValueKind == reflect.Ptr {
 			objValue = objValue.Elem()
@@ -88,10 +98,7 @@ func _validate(obj interface{}, lazy bool) (Validator) {
 		break
 	}
 
-	var val = &validator{}
-	val.ErrMap = make(map[string][]error)
 	val.fieldList = make([]string, 0, objType.NumField())
-	val.lazy = lazy
 
 	validate(objType, objValue, val)
 	return val

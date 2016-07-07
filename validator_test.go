@@ -32,7 +32,7 @@ func (this Human) AgeValidator(a int) error {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 func TestValidator(t *testing.T) {
-	var h *Human = &Human{}
+	var h *Human = nil
 	var r = Validate(&h)
 	if !r.OK() {
 		var e = r.Error()
@@ -41,14 +41,14 @@ func TestValidator(t *testing.T) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-func TestLazyValidator(t *testing.T) {
-	var h Human
-
-	var r = LazyValidate(&h)
-	if !r.OK() {
-		var e = r.Error()
-		fmt.Println(errors.ErrorCode(e), errors.ErrorMessage(e))
-		fmt.Println(r.ErrorList())
-	}
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//func TestLazyValidator(t *testing.T) {
+//	var h Human
+//
+//	var r = LazyValidate(&h)
+//	if !r.OK() {
+//		var e = r.Error()
+//		fmt.Println(errors.ErrorCode(e), errors.ErrorMessage(e))
+//		fmt.Println(r.ErrorList())
+//	}
+//}
