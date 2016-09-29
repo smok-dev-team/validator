@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"errors"
+	"time"
 )
 
 const (
@@ -114,7 +115,7 @@ func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val
 			fieldValue = fieldValue.Elem()
 		}
 
-		if fieldValue.Kind() == reflect.Struct {
+		if fieldValue.Kind() == reflect.Struct && fieldValue.Type() != reflect.TypeOf(time.Time{}) {
 			validate(fieldValue.Type(), currentObjValue, fieldValue, val)
 			if val.lazy && len(val.ErrMap) > 0 {
 				return
