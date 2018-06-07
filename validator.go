@@ -127,7 +127,13 @@ func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val
 		var funcValue = getFuncWithName(funcName, currentObjValue, objValue)
 
 		if funcValue.IsValid() {
-			var eList = funcValue.Call([]reflect.Value{fieldValue})
+			var pValue []reflect.Value
+			if fieldValue.IsValid() {
+				pValue = []reflect.Value{fieldValue}
+			} else {
+				pValue = []reflect.Value{reflect.New(fieldStruct.Type).Elem()}
+			}
+			var eList = funcValue.Call(pValue)
 
 			if !eList[0].IsNil() {
 				val.fieldList = append(val.fieldList, fieldStruct.Name)
