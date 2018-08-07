@@ -17,8 +17,8 @@ type Validator interface {
 	ErrorMap() map[string][]error
 	ErrorListWithField(field string) []error
 	Error() error
-	Failure() bool
-	Pass() bool
+	Failed() bool
+	Passed() bool
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,11 +64,11 @@ func (this *validator) OK() bool {
 	return len(this.ErrMap) == 0
 }
 
-func (this *validator) Failure() bool {
+func (this *validator) Failed() bool {
 	return this.OK() == false
 }
 
-func (this *validator) Pass() bool {
+func (this *validator) Passed() bool {
 	return this.OK()
 }
 
