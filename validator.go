@@ -8,7 +8,11 @@ import (
 )
 
 const (
-	k_VALIDATOR_FUNC_SUFFIX = "Validator"
+	kFuncSuffix = "Validator"
+)
+
+var (
+	ErrNilObject = errors.New("object passed for validation is nil")
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +97,7 @@ func _validate(obj interface{}, lazy bool) Validator {
 	for {
 		if objValueKind == reflect.Ptr && objValue.IsNil() {
 			var errList = make([]error, 1)
-			errList[0] = errors.New("object passed for validation is nil")
+			errList[0] = ErrNilObject
 			val.fieldList = make([]string, 1)
 			val.fieldList[0] = "Object"
 			val.ErrMap["Object"] = errList
@@ -132,7 +136,7 @@ func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val
 			continue
 		}
 
-		var funcName = fieldStruct.Name + k_VALIDATOR_FUNC_SUFFIX
+		var funcName = fieldStruct.Name + kFuncSuffix
 		var funcValue = getFuncWithName(funcName, currentObjValue, objValue)
 
 		if funcValue.IsValid() {
