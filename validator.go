@@ -1,9 +1,9 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
-	"errors"
 	"time"
 )
 
