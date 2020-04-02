@@ -56,14 +56,18 @@ func (this Student) TimeValidator(p *time.Time) error {
 }
 
 func TestCheck(t *testing.T) {
-	var tables = []struct {
-		val interface{}
-		r   error
-	}{{val: &Human{}, r: ErrEmptyName}}
+	var tests = []struct {
+		val    interface{}
+		expect error
+	}{
+		{val: &Human{}, expect: ErrEmptyName},
+		{val: &Human{Name: "haha"}, expect: ErrEmptyAge},
+		{val: &Human{Name: "haha", Age: 101}, expect: ErrInvalidAge},
+	}
 
-	for _, item := range tables {
-		if err := validator.Check(item.val); err != item.r {
-			t.Fatal("应该得到:", item.r, "实际得到:", err)
+	for _, item := range tests {
+		if err := validator.Check(item.val); err != item.expect {
+			t.Fatal("应该得到:", item.expect, "实际得到:", err)
 		}
 	}
 }
