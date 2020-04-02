@@ -34,25 +34,25 @@ func Check(obj interface{}) error {
 	return check(objType, objValue, objValue)
 }
 
-func check(objType reflect.Type, currentObjValue, objValue reflect.Value) error {
+func check(objType reflect.Type, parent, current reflect.Value) error {
 	var numField = objType.NumField()
 	for i := 0; i < numField; i++ {
 		var fieldStruct = objType.Field(i)
-		var fieldValue = objValue.Field(i)
+		var fieldValue = current.Field(i)
 
 		if fieldValue.Kind() == reflect.Ptr {
 			fieldValue = fieldValue.Elem()
 		}
 
 		if fieldValue.Kind() == reflect.Struct && fieldValue.Type() != reflect.TypeOf(time.Time{}) {
-			if err := check(fieldValue.Type(), currentObjValue, fieldValue); err != nil {
+			if err := check(fieldValue.Type(), parent, fieldValue); err != nil {
 				return err
 			}
 			continue
 		}
 
 		var mName = fieldStruct.Name + kFuncSuffix
-		var mValue = methodByName(mName, currentObjValue, objValue)
+		var mValue = methodByName(mName, parent, current)
 
 		if mValue.IsValid() {
 			var pValue []reflect.Value
@@ -72,15 +72,15 @@ func check(objType reflect.Type, currentObjValue, objValue reflect.Value) error 
 	return nil
 }
 
-func methodByName(mName string, currentObjValue, objValue reflect.Value) reflect.Value {
-	var mValue = currentObjValue.MethodByName(mName)
+func methodByName(mName string, parent, current reflect.Value) reflect.Value {
+	var mValue = parent.MethodByName(mName)
 	if mValue.IsValid() == false {
-		if currentObjValue.CanAddr() {
-			mValue = currentObjValue.Addr().MethodByName(mName)
+		if parent.CanAddr() {
+			mValue = parent.Addr().MethodByName(mName)
 		}
 	}
-	if mValue.IsValid() == false && currentObjValue != objValue {
-		return methodByName(mName, objValue, objValue)
+	if mValue.IsValid() == false && parent != current {
+		return methodByName(mName, current, current)
 	}
 	return mValue
 }
