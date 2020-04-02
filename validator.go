@@ -2,7 +2,6 @@ package validator
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"time"
 )
@@ -12,96 +11,17 @@ const (
 )
 
 var (
-	ErrNilObject = errors.New("object passed for validation is nil")
+	ErrNilObject = errors.New("validator: receiving nil object")
 )
 
-////////////////////////////////////////////////////////////////////////////////
-type Validator interface {
-	ErrorList() []error
-	ErrorMap() map[string][]error
-	ErrorListWithField(field string) []error
-	Error() error
-	Failed() bool
-	Passed() bool
-}
-
-////////////////////////////////////////////////////////////////////////////////
-type validator struct {
-	ErrMap    map[string][]error `json:"error_map"`
-	errList   []error            `json:"-"`
-	fieldList []string           `json:"-"`
-	lazy      bool               `json:"-"`
-}
-
-func (this *validator) String() string {
-	return fmt.Sprintf("[validator]: Valid:%t, Error:%s", this.OK(), this.ErrMap)
-}
-
-func (this *validator) ErrorList() []error {
-	if this.errList == nil {
-		if len(this.ErrMap) > 0 {
-			this.errList = make([]error, 0, len(this.fieldList))
-			for _, field := range this.fieldList {
-				this.errList = append(this.errList, this.ErrMap[field]...)
-			}
-		}
-	}
-	return this.errList
-}
-
-func (this *validator) ErrorMap() map[string][]error {
-	return this.ErrMap
-}
-
-func (this *validator) ErrorListWithField(field string) []error {
-	return this.ErrMap[field]
-}
-
-func (this *validator) Error() error {
-	if len(this.ErrorList()) > 0 {
-		return this.ErrorList()[0]
-	}
-	return nil
-}
-
-func (this *validator) OK() bool {
-	return len(this.ErrMap) == 0
-}
-
-func (this *validator) Failed() bool {
-	return this.OK() == false
-}
-
-func (this *validator) Passed() bool {
-	return this.OK()
-}
-
-////////////////////////////////////////////////////////////////////////////////
-func Validate(obj interface{}) Validator {
-	return _validate(obj, false)
-}
-
-func LazyValidate(obj interface{}) Validator {
-	return _validate(obj, true)
-}
-
-func _validate(obj interface{}, lazy bool) Validator {
+func Check(obj interface{}) error {
 	var objType = reflect.TypeOf(obj)
 	var objValue = reflect.ValueOf(obj)
 	var objValueKind = objValue.Kind()
 
-	var val = &validator{}
-	val.ErrMap = make(map[string][]error)
-	val.lazy = lazy
-
 	for {
 		if objValueKind == reflect.Ptr && objValue.IsNil() {
-			var errList = make([]error, 1)
-			errList[0] = ErrNilObject
-			val.fieldList = make([]string, 1)
-			val.fieldList[0] = "Object"
-			val.ErrMap["Object"] = errList
-			return val
+			return ErrNilObject
 		}
 		if objValueKind == reflect.Ptr {
 			objValue = objValue.Elem()
@@ -111,14 +31,10 @@ func _validate(obj interface{}, lazy bool) Validator {
 		}
 		break
 	}
-
-	val.fieldList = make([]string, 0, objType.NumField())
-
-	validate(objType, objValue, objValue, val)
-	return val
+	return check(objType, objValue, objValue)
 }
 
-func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val *validator) {
+func check(objType reflect.Type, currentObjValue, objValue reflect.Value) error {
 	var numField = objType.NumField()
 	for i := 0; i < numField; i++ {
 		var fieldStruct = objType.Field(i)
@@ -129,49 +45,42 @@ func validate(objType reflect.Type, currentObjValue, objValue reflect.Value, val
 		}
 
 		if fieldValue.Kind() == reflect.Struct && fieldValue.Type() != reflect.TypeOf(time.Time{}) {
-			validate(fieldValue.Type(), currentObjValue, fieldValue, val)
-			if val.lazy && len(val.ErrMap) > 0 {
-				return
+			if err := check(fieldValue.Type(), currentObjValue, fieldValue); err != nil {
+				return err
 			}
 			continue
 		}
 
-		var funcName = fieldStruct.Name + kFuncSuffix
-		var funcValue = getFuncWithName(funcName, currentObjValue, objValue)
+		var mName = fieldStruct.Name + kFuncSuffix
+		var mValue = methodByName(mName, currentObjValue, objValue)
 
-		if funcValue.IsValid() {
+		if mValue.IsValid() {
 			var pValue []reflect.Value
 			if fieldValue.IsValid() {
 				pValue = []reflect.Value{fieldValue}
 			} else {
 				pValue = []reflect.Value{reflect.New(fieldStruct.Type).Elem()}
 			}
-			var eList = funcValue.Call(pValue)
+			var rValueList = mValue.Call(pValue)
 
-			if !eList[0].IsNil() {
-				val.fieldList = append(val.fieldList, fieldStruct.Name)
-				if eList[0].Kind() == reflect.Slice {
-					val.ErrMap[fieldStruct.Name] = eList[0].Interface().([]error)
-				} else {
-					val.ErrMap[fieldStruct.Name] = []error{eList[0].Interface().(error)}
-				}
-				if val.lazy {
-					return
-				}
+			if !rValueList[0].IsNil() {
+				var err = rValueList[0].Interface().(error)
+				return err
 			}
 		}
 	}
+	return nil
 }
 
-func getFuncWithName(funcName string, currentObjValue, objValue reflect.Value) reflect.Value {
-	var funcValue = currentObjValue.MethodByName(funcName)
-	if funcValue.IsValid() == false {
+func methodByName(mName string, currentObjValue, objValue reflect.Value) reflect.Value {
+	var mValue = currentObjValue.MethodByName(mName)
+	if mValue.IsValid() == false {
 		if currentObjValue.CanAddr() {
-			funcValue = currentObjValue.Addr().MethodByName(funcName)
+			mValue = currentObjValue.Addr().MethodByName(mName)
 		}
 	}
-	if funcValue.IsValid() == false && currentObjValue != objValue {
-		return getFuncWithName(funcName, objValue, objValue)
+	if mValue.IsValid() == false && currentObjValue != objValue {
+		return methodByName(mName, objValue, objValue)
 	}
-	return funcValue
+	return mValue
 }

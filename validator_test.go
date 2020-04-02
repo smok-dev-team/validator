@@ -1,11 +1,17 @@
-package validator
+package validator_test
 
 import (
 	"errors"
-	"fmt"
+	"github.com/smartwalle/validator"
 	"testing"
 	"time"
 )
+
+var ErrEmptyName = errors.New("请输入名字")
+var ErrEmptyAge = errors.New("请输入年龄")
+var ErrInvalidAge = errors.New("你也太长命了吧")
+var ErrEmptyNumber = errors.New("应该有学号")
+var ErrEmptyTime = errors.New("应该有时间")
 
 type Human struct {
 	Name string
@@ -14,28 +20,19 @@ type Human struct {
 
 func (this *Human) NameValidator(n string) error {
 	if n == "" {
-		return errors.New("请输入名字")
+		return ErrEmptyName
 	}
 	return nil
 }
 
 func (this Human) AgeValidator(a int) error {
 	if a <= 0 {
-		return errors.New("请输入年龄")
+		return ErrEmptyAge
 	}
-
 	if a > 100 {
-		return errors.New("你也太长命了吧")
+		return ErrInvalidAge
 	}
 	return nil
-}
-
-func TestValidate(t *testing.T) {
-	var h = &Human{}
-	var r = Validate(&h)
-	if !r.Passed() {
-		fmt.Println(r.ErrorList())
-	}
 }
 
 type Student struct {
@@ -44,29 +41,36 @@ type Student struct {
 	Time   *time.Time
 }
 
-func (this Student) NameValidator(n string) error {
-	return errors.New("不管输入什么，都不会通过的")
-}
-
 func (this Student) NumberValidator(n int) error {
 	if n <= 0 {
-		return errors.New("应该有一个学号")
+		return ErrEmptyNumber
 	}
 	return nil
 }
 
 func (this Student) TimeValidator(p *time.Time) error {
 	if p == nil {
-		return errors.New("oh no")
+		return ErrEmptyTime
 	}
 	return nil
 }
 
-func TestLazyValidate(t *testing.T) {
-	var s = &Student{Human: &Human{}}
+func TestCheck(t *testing.T) {
+	var tables = []struct {
+		val interface{}
+		r   error
+	}{{val: &Human{}, r: ErrEmptyName}}
 
-	var r = LazyValidate(&s)
-	if !r.Passed() {
-		fmt.Println(r.ErrorList())
+	for _, item := range tables {
+		if err := validator.Check(item.val); err != item.r {
+			t.Fatal("应该得到:", item.r, "实际得到:", err)
+		}
+	}
+}
+
+func BenchmarkCheck(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var s = &Student{Human: &Human{}}
+		validator.Check(s)
 	}
 }
