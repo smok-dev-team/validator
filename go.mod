@@ -1,3 +1,3 @@
-module github.com/smartwalle/validator
+module github.com/smok-dev-team/validator
 
 go 1.12
